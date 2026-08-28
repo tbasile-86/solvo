@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solvo — Gestion &amp; Suivi de Dettes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#0E2B26;
+  --ink-2:#153B34;
+  --paper:#FBF8F1;
+  --paper-2:#F3EEE1;
+  --line:#DCD3BC;
+  --text:#20241F;
+  --muted:#6B6455;
+  --gold:#B08D3E;
+  --gold-2:#8C6D28;
+  --success:#2F6D4F;
+  --success-bg:#E6EFE7;
+  --danger:#9E3B3B;
+  --danger-bg:#F5E7E4;
+  --warn:#B98A2E;
+  --warn-bg:#F6EEDD;
+  --radius:10px;
+  --shadow:0 8px 24px rgba(14,43,38,.10);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  color:var(--text);
+  font-family:'IBM Plex Sans',sans-serif;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.display{font-family:'Fraunces',serif;letter-spacing:-0.01em;}
+.mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+a{color:inherit;}
+button{font-family:inherit;}
+#app{min-height:100vh;}
+
+/* ---------- Landing ---------- */
+.landing{min-height:100vh;background:
+  radial-gradient(1200px 600px at 85% -10%, rgba(176,141,62,.10), transparent 60%),
+  linear-gradient(180deg,var(--ink) 0%, var(--ink-2) 60%, var(--ink) 100%);
+  color:#F3EEE1;display:flex;flex-direction:column;}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:26px 6vw;}
+.brand{display:flex;align-items:center;gap:10px;font-family:'Fraunces',serif;font-weight:600;font-size:22px;color:#F6EFDD;}
+.brand-mark{width:30px;height:30px;border:1.5px solid var(--gold);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--gold);transform:rotate(-4deg);}
+.nav-links{display:flex;gap:10px;}
+.btn{border:none;cursor:pointer;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:600;transition:.15s ease;}
+.btn-ghost{background:transparent;color:#F3EEE1;border:1px solid rgba(243,238,225,.35);}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
+.btn-gold{background:var(--gold);color:#1B1405;}
+.btn-gold:hover{background:#C29B47;}
+.btn-outline{background:transparent;border:1px solid var(--ink);color:var(--ink);}
+.btn-outline:hover{background:var(--ink);color:#fff;}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-sm{padding:7px 14px;font-size:13px;border-radius:7px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+
+.hero{flex:1;display:flex;align-items:center;gap:6vw;padding:2vw 6vw 5vw;flex-wrap:wrap;}
+.hero-copy{flex:1 1 460px;}
+.eyebrow{font-family:'IBM Plex Mono',monospace;color:var(--gold);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:18px;display:flex;align-items:center;gap:10px;}
+.eyebrow::before{content:'';width:26px;height:1px;background:var(--gold);display:inline-block;}
+.hero h1{font-size:clamp(34px,4.6vw,58px);line-height:1.04;margin:0 0 20px;color:#F8F3E4;}
+.hero h1 em{color:var(--gold);font-style:normal;}
+.hero p{font-size:16.5px;line-height:1.65;color:#CFC8B4;max-width:520px;margin:0 0 30px;}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.slots{margin-top:26px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#B7AF98;}
+.slots b{color:var(--gold);}
+
+.ledger-card{flex:1 1 400px;background:var(--paper);border-radius:14px;box-shadow:0 30px 70px rgba(0,0,0,.35);padding:0;overflow:hidden;transform:rotate(1.2deg);border:1px solid rgba(255,255,255,.06);}
+.ledger-tab{background:var(--ink);color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:10px 22px;display:flex;justify-content:space-between;}
+.ledger-body{padding:24px 26px 20px;}
+.ledger-row{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px dashed var(--line);}
+.ledger-row:last-child{border-bottom:none;}
+.ledger-row .lbl{color:var(--muted);font-size:13.5px;}
+.ledger-row .val{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;}
+.ledger-row .val.pos{color:var(--success);}
+.ledger-row .val.neg{color:var(--danger);}
+.ledger-foot{background:var(--paper-2);padding:14px 26px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+
+.features{background:var(--paper);color:var(--text);padding:70px 6vw 90px;}
+.features h2{font-size:clamp(24px,2.6vw,32px);margin:0 0 8px;}
+.features>p{color:var(--muted);margin:0 0 40px;max-width:560px;}
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px;}
+.feat{border:1px solid var(--line);border-radius:12px;padding:24px;background:#fff;}
+.feat .num{font-family:'IBM Plex Mono',monospace;color:var(--gold);font-size:12px;letter-spacing:.1em;}
+.feat h3{margin:10px 0 8px;font-size:18px;}
+.feat p{margin:0;color:var(--muted);font-size:14px;line-height:1.55;}
+.footer-mini{text-align:center;padding:26px;color:var(--muted);font-size:12.5px;background:var(--paper-2);}
+
+/* ---------- Auth ---------- */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--ink);padding:24px;}
+.auth-card{background:var(--paper);border-radius:14px;width:100%;max-width:420px;padding:38px 36px;box-shadow:0 30px 80px rgba(0,0,0,.4);}
+.auth-card .brand{color:var(--ink);margin-bottom:6px;}
+.auth-card .brand-mark{border-color:var(--gold);color:var(--gold-2);}
+.auth-sub{color:var(--muted);font-size:13.5px;margin:0 0 26px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;}
+.field input,.field select,.field textarea{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:8px;font-size:14.5px;background:#fff;font-family:inherit;color:var(--text);}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--gold);outline-offset:1px;border-color:var(--gold);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-msg{font-size:13px;padding:10px 12px;border-radius:8px;margin-bottom:16px;}
+.form-msg.err{background:var(--danger-bg);color:var(--danger);}
+.form-msg.ok{background:var(--success-bg);color:var(--success);}
+.switch-link{text-align:center;font-size:13.5px;color:var(--muted);margin-top:18px;}
+.switch-link a{color:var(--gold-2);font-weight:600;cursor:pointer;text-decoration:underline;}
+.full{width:100%;}
+
+/* ---------- App shell ---------- */
+.shell{display:flex;min-height:100vh;}
+.sidebar{width:236px;flex-shrink:0;background:var(--ink);color:#EFE9D8;display:flex;flex-direction:column;padding:22px 0;}
+.sidebar .brand{padding:0 22px 22px;border-bottom:1px solid rgba(239,233,216,.12);margin-bottom:14px;color:#F6EFDD;font-size:19px;}
+.side-user{padding:0 22px 16px;font-size:12.5px;color:#B7AF98;}
+.side-user b{display:block;color:#F0EAD8;font-size:14px;font-weight:600;margin-bottom:2px;}
+.tab{display:flex;align-items:center;gap:11px;padding:12px 22px;font-size:14px;cursor:pointer;color:#CFC8B4;border-left:3px solid transparent;position:relative;}
+.tab .ic{width:18px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--gold);}
+.tab:hover{background:rgba(255,255,255,.04);color:#F6EFDD;}
+.tab.active{background:rgba(176,141,62,.14);border-left-color:var(--gold);color:#F6EFDD;font-weight:600;}
+.side-foot{margin-top:auto;padding:16px 22px 0;border-top:1px solid rgba(239,233,216,.12);}
+.main{flex:1;min-width:0;background:var(--paper);}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:22px 34px;border-bottom:1px solid var(--line);background:#fff;}
+.topbar h1{font-size:22px;margin:0;}
+.topbar .sub{color:var(--muted);font-size:13px;margin-top:3px;}
+.content{padding:30px 34px 60px;}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;margin-bottom:28px;}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px 22px;}
+.kpi .lbl{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px;}
+.kpi .num{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:600;color:var(--ink);}
+.kpi .num.gold{color:var(--gold-2);}
+.kpi .num.danger{color:var(--danger);}
+.kpi .num.success{color:var(--success);}
+.kpi .foot{font-size:12px;color:var(--muted);margin-top:8px;}
+
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:24px;overflow:hidden;}
+.panel-head{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line);}
+.panel-head h3{margin:0;font-size:16.5px;}
+.panel-body{padding:20px 22px;}
+.two-col{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;}
+@media(max-width:980px){.two-col{grid-template-columns:1fr;}.row2{grid-template-columns:1fr;}}
+
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th{text-align:left;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;padding:10px 14px;border-bottom:1px solid var(--line);}
+td{padding:12px 14px;border-bottom:1px solid var(--paper-2);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+.amount{font-family:'IBM Plex Mono',monospace;font-weight:600;}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;}
+.badge.paid{background:var(--success-bg);color:var(--success);}
+.badge.pending{background:var(--warn-bg);color:var(--warn);}
+.badge.late{background:var(--danger-bg);color:var(--danger);}
+.badge.partial{background:#E7ECF4;color:#3A5A8C;}
+.badge.active{background:var(--success-bg);color:var(--success);}
+.badge.suspended{background:var(--danger-bg);color:var(--danger);}
+.empty{text-align:center;padding:50px 20px;color:var(--muted);}
+.empty .ic{font-size:30px;margin-bottom:12px;opacity:.5;}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px;}
+.toolbar input,.toolbar select{padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;background:#fff;}
+.icon-btn{background:transparent;border:1px solid var(--line);border-radius:7px;padding:6px 10px;cursor:pointer;font-size:12.5px;color:var(--ink);}
+.icon-btn:hover{border-color:var(--gold);color:var(--gold-2);}
+.icon-btn.danger:hover{border-color:var(--danger);color:var(--danger);}
+
+.modal-bg{position:fixed;inset:0;background:rgba(14,43,38,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,.4);}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--line);}
+.modal-head h3{margin:0;font-size:17px;}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);}
+.modal-body{padding:22px 24px;}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid var(--line);}
+.progress-bar{height:7px;background:var(--paper-2);border-radius:6px;overflow:hidden;margin-top:6px;}
+.progress-bar>span{display:block;height:100%;background:var(--gold);}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#F3EEE1;padding:13px 20px;border-radius:9px;font-size:13.5px;box-shadow:var(--shadow);z-index:200;}
+.limit-banner{background:var(--danger-bg);color:var(--danger);padding:12px 16px;border-radius:8px;font-size:13.5px;margin-bottom:16px;}
+.small-muted{color:var(--muted);font-size:12.5px;}
+.chart-box{position:relative;height:230px;}
+::selection{background:var(--gold);color:#1B1405;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+
+/* ============================= SOLVO — moteur applicatif (API) ============================= */
+const API_BASE = window.SOLVO_API_BASE || '/api';
+
+async function api(path, options = {}) {
+  const res = await fetch(API_BASE + path, {
+    method: options.method || 'GET',
+    credentials: 'include',
+    headers: options.body ? { 'Content-Type': 'application/json' } : {},
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  let data = null;
+  try { data = await res.json(); } catch (e) { /* réponse vide (204) */ }
+  if (!res.ok) {
+    const err = new Error((data && data.error) || `Erreur ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+let session = null; // { id, name, email, role, currency }
+let route = 'landing';
+let uiState = { adminTab:'overview', memberTab:'overview', filterType:'all', filterStatus:'all', search:'', modal:null, editingDebtId:null, payingDebtId:null, memberFocus:null };
+
+// Caches côté client, rechargés à chaque navigation pertinente — jamais de
+// chargement global de toutes les données de tous les utilisateurs.
+let cache = { debts: {items:[], total:0}, adminUsers: {items:[], total:0}, adminStats: null, reports: null, memberFocusDebts: [] };
+
+function fmtDate(iso){ if(!iso) return '—'; const d=new Date(iso); return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}); }
+function fmtMoney(n,cur){ n = Number(n)||0; return n.toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2}) + ' ' + (cur||'XAF'); }
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function statusLabel(s){ return {pending:'En attente',partial:'Partiel',paid:'Payée',late:'En retard',cancelled:'Annulée'}[s]||s; }
+
+function toast(msg){
+  const el = document.createElement('div'); el.className='toast'; el.textContent = msg;
+  document.body.appendChild(el); setTimeout(()=>el.remove(), 2600);
+}
+async function go(r, extra){ route = r; if(extra) Object.assign(uiState, extra); await loadDataForRoute(); render(); }
+async function logout(){ try{ await api('/auth/logout', {method:'POST'}); }catch(e){} session=null; cache={debts:{items:[],total:0},adminUsers:{items:[],total:0},adminStats:null,reports:null,memberFocusDebts:[]}; await go('login'); }
+
+/* ---------------------------- Chargement des données selon la route ---------------------------- */
+async function loadDataForRoute(){
+  try{
+    if(route==='admin'){
+      if(uiState.adminTab==='overview') cache.adminStats = await api('/admin/stats');
+      if(uiState.adminTab==='members'){
+        const q = new URLSearchParams(); if(uiState.filterStatus!=='all') q.set('status', uiState.filterStatus);
+        cache.adminUsers = await api('/admin/users?'+q.toString());
+      }
+      if(uiState.memberFocus){
+        // Pas de route dédiée exposée par défaut (isolation stricte) — voir §8 :
+        // une consultation ponctuelle nécessiterait une route admin auditée dédiée.
+        cache.memberFocusDebts = [];
+      }
+    }
+    if(route==='member'){
+      if(uiState.memberTab==='overview'){
+        cache.reports = await api('/reports');
+        const q = new URLSearchParams({page_size:'50'});
+        cache.debts = await api('/debts?'+q.toString());
+      }
+      if(uiState.memberTab==='due' || uiState.memberTab==='owed'){
+        const q = new URLSearchParams({type: uiState.memberTab, page_size:'100'});
+        if(uiState.filterStatus!=='all') q.set('status', uiState.filterStatus);
+        cache.debts = await api('/debts?'+q.toString());
+      }
+      if(uiState.memberTab==='reports'){
+        cache.reports = await api('/reports');
+        cache.debts = await api('/debts?page_size=200');
+      }
+    }
+  }catch(err){
+    if(err.status===401){ session=null; route='login'; }
+    else toast(err.message || 'Erreur de chargement.');
+  }
+}
+
+function debtsCache(){ return cache.debts.items || []; }
+function paidAmount(debt){ return Number(debt.paid_amount||0); } // fourni par le calcul serveur si besoin, sinon 0 par défaut côté liste
+function remainingAmount(debt){ return Math.max(0, Number(debt.amount||0) - paidAmount(debt)); }
+
+
+/* ---------------------------- Rendu ---------------------------- */
+function render(){
+  const app = document.getElementById('app');
+  if(route==='landing') app.innerHTML = viewLanding();
+  else if(route==='login') app.innerHTML = viewAuth('login');
+  else if(route==='register') app.innerHTML = viewAuth('register');
+  else if(route==='admin') app.innerHTML = viewAdminShell();
+  else if(route==='member') app.innerHTML = viewMemberShell();
+  else app.innerHTML = viewLanding();
+  bindEvents();
+  afterRenderCharts();
+}
+
+/* ---------------------------- Landing ---------------------------- */
+let landingStats = null;
+function viewLanding(){
+  const remaining = landingStats ? landingStats.remaining_slots : null;
+  const limit = landingStats ? landingStats.member_limit : 500;
+  return `
+  <div class="landing">
+    <div class="nav">
+      <div class="brand"><span class="brand-mark">S</span> Solvo</div>
+      <div class="nav-links">
+        <button class="btn btn-ghost" data-go="login">Connexion</button>
+        <button class="btn btn-gold" data-go="register">Créer un compte</button>
+      </div>
+    </div>
+    <div class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">Gestion &amp; suivi de dettes</div>
+        <h1>Chaque dette,<br><em>tenue à jour</em>,<br>jusqu'au dernier franc.</h1>
+        <p>Solvo centralise ce que vous devez et ce qu'on vous doit : échéances, paiements partiels, relances et historique complet — sur une seule plateforme, en toute devise.</p>
+        <div class="hero-cta">
+          <button class="btn btn-gold" data-go="register">Ouvrir mon compte</button>
+          <button class="btn btn-ghost" data-go="login">J'ai déjà un compte</button>
+        </div>
+        <div class="slots">${remaining!==null ? `Accès fondateur limité — <b>${remaining}</b> / ${limit} places restantes` : ''}</div>
+      </div>
+      <div class="ledger-card">
+        <div class="ledger-tab"><span>GRAND LIVRE</span><span>Solvo</span></div>
+        <div class="ledger-body">
+          <div class="ledger-row"><span class="lbl">Créances en cours</span><span class="val pos mono">+ 480 000 XAF</span></div>
+          <div class="ledger-row"><span class="lbl">Dettes en cours</span><span class="val neg mono">− 165 000 XAF</span></div>
+          <div class="ledger-row"><span class="lbl">Échéance la plus proche</span><span class="val mono">03 Sept.</span></div>
+          <div class="ledger-row"><span class="lbl">Solde net</span><span class="val pos mono">+ 315 000 XAF</span></div>
+        </div>
+        <div class="ledger-foot"><span>Mis à jour en continu</span><span>N° 0427</span></div>
+      </div>
+    </div>
+    <div class="features">
+      <h2>Une discipline de comptable, une interface moderne</h2>
+      <p>Conçu pour les indépendants, commerçants et petites structures qui gèrent des dettes et créances avec plusieurs partenaires.</p>
+      <div class="feat-grid">
+        <div class="feat"><div class="num">01</div><h3>Double registre</h3><p>Suivez séparément ce que vous devez et ce que l'on vous doit, avec un solde net toujours visible.</p></div>
+        <div class="feat"><div class="num">02</div><h3>Paiements partiels</h3><p>Enregistrez chaque versement et laissez le statut se mettre à jour automatiquement.</p></div>
+        <div class="feat"><div class="num">03</div><h3>Alertes d'échéance</h3><p>Les dettes en retard ou proches de l'échéance remontent immédiatement au tableau de bord.</p></div>
+        <div class="feat"><div class="num">04</div><h3>Multi-devises</h3><p>XAF, EUR, USD ou toute autre devise, dette par dette — sans conversion implicite.</p></div>
+        <div class="feat"><div class="num">05</div><h3>Console d'administration</h3><p>Supervision globale des abonnés, des volumes et de l'activité de la plateforme.</p></div>
+        <div class="feat"><div class="num">06</div><h3>Export des données</h3><p>Exportez votre registre en CSV à tout moment.</p></div>
+      </div>
+    </div>
+    <div class="footer-mini">Solvo — Plateforme de gestion et de suivi de dettes · Accès limité à ${limit} membres</div>
+  </div>`;
+}
+
+/* ---------------------------- Auth ---------------------------- */
+function viewAuth(mode){
+  const isLogin = mode==='login';
+  return `
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="brand"><span class="brand-mark">S</span> Solvo</div>
+      <p class="auth-sub">${isLogin ? 'Connectez-vous à votre espace.' : 'Créez votre compte Solvo.'}</p>
+      <div id="authMsg"></div>
+      ${isLogin ? `
+        <form id="loginForm">
+          <div class="field"><label>Adresse e-mail</label><input type="email" name="email" required placeholder="vous@exemple.com"></div>
+          <div class="field"><label>Mot de passe</label><input type="password" name="password" required placeholder="••••••••"></div>
+          <button class="btn btn-gold full" type="submit">Se connecter</button>
+        </form>
+        <div class="switch-link">Pas encore de compte ? <a data-go="register">Créer un compte</a></div>
+      ` : `
+        <form id="registerForm">
+          <div class="field"><label>Nom complet</label><input type="text" name="name" required placeholder="Votre nom"></div>
+          <div class="field"><label>Adresse e-mail</label><input type="email" name="email" required placeholder="vous@exemple.com"></div>
+          <div class="row2">
+            <div class="field"><label>Mot de passe</label><input type="password" name="password" required minlength="8" placeholder="8 caractères min."></div>
+            <div class="field"><label>Devise principale</label>
+              <select name="currency"><option value="XAF">XAF</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option><option value="CAD">CAD</option></select>
+            </div>
+          </div>
+          <button class="btn btn-gold full" type="submit">Créer mon compte</button>
+        </form>
+        <div class="switch-link">Déjà inscrit ? <a data-go="login">Se connecter</a></div>
+      `}
+    </div>
+  </div>`;
+}
+
+/* ---------------------------- Shell Admin ---------------------------- */
+function viewAdminShell(){
+  const tab = uiState.adminTab;
+  return `
+  <div class="shell">
+    <div class="sidebar">
+      <div class="brand"><span class="brand-mark">S</span> Solvo</div>
+      <div class="side-user"><b>${escapeHtml(session.name)}</b>Administrateur</div>
+      <div class="tab ${tab==='overview'?'active':''}" data-atab="overview"><span class="ic">◆</span> Vue d'ensemble</div>
+      <div class="tab ${tab==='members'?'active':''}" data-atab="members"><span class="ic">☰</span> Abonnés</div>
+      <div class="tab ${tab==='settings'?'active':''}" data-atab="settings"><span class="ic">⚙</span> Paramètres</div>
+      <div class="side-foot"><button class="btn btn-ghost full" id="logoutBtn">Déconnexion</button></div>
+    </div>
+    <div class="main">
+      ${tab==='overview' ? adminOverview() : tab==='members' ? adminMembers() : adminSettings()}
+    </div>
+  </div>`;
+}
+
+function adminOverview(){
+  const s = cache.adminStats || { total_members:0, active_members:0, member_limit:500, remaining_slots:500 };
+  return `
+  <div class="topbar"><div><h1>Vue d'ensemble</h1><div class="sub">Activité globale de la plateforme Solvo</div></div></div>
+  <div class="content">
+    <div class="cards">
+      <div class="kpi"><div class="lbl">Membres inscrits</div><div class="num">${s.total_members} <span style="font-size:15px;color:var(--muted);">/ ${s.member_limit}</span></div><div class="foot">${s.active_members} actifs · ${s.suspended_members} suspendus</div></div>
+      <div class="kpi"><div class="lbl">Places restantes</div><div class="num gold">${s.remaining_slots}</div><div class="foot">${s.registrations_open ? 'Inscriptions ouvertes' : 'Inscriptions fermées'}</div></div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>Répartition des abonnés</h3></div><div class="panel-body"><div class="chart-box"><canvas id="chartMembers"></canvas></div></div></div>
+  </div>`;
+}
+
+function adminMembers(){
+  const members = cache.adminUsers.items || [];
+  const q = (uiState.search||'').toLowerCase();
+  const filtered = members.filter(m => !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q));
+  return `
+  <div class="topbar"><div><h1>Abonnés</h1><div class="sub">${cache.adminUsers.total||0} abonné(s)</div></div></div>
+  <div class="content">
+    <div class="toolbar">
+      <input type="text" id="memberSearch" placeholder="Rechercher un abonné…" value="${escapeHtml(uiState.search||'')}" style="min-width:240px;">
+      <select id="memberStatusFilter">
+        <option value="all" ${uiState.filterStatus==='all'?'selected':''}>Tous statuts</option>
+        <option value="active" ${uiState.filterStatus==='active'?'selected':''}>Actifs</option>
+        <option value="suspended" ${uiState.filterStatus==='suspended'?'selected':''}>Suspendus</option>
+      </select>
+    </div>
+    <div class="panel"><div class="panel-body" style="padding:0;">
+      <table>
+        <thead><tr><th>Nom</th><th>E-mail</th><th>Devise</th><th>Dettes</th><th>Statut</th><th>Inscrit le</th><th></th></tr></thead>
+        <tbody>
+        ${filtered.length ? filtered.map(m=>`
+          <tr>
+            <td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.email)}</td><td>${m.currency||'XAF'}</td>
+            <td>${m.debts_count}</td>
+            <td><span class="badge ${m.status}">${m.status==='active'?'Actif':'Suspendu'}</span></td>
+            <td>${fmtDate(m.created_at)}</td>
+            <td style="text-align:right;white-space:nowrap;">
+              <button class="icon-btn ${m.status==='active'?'danger':''}" data-toggle-member="${m.id}" data-current-status="${m.status}">${m.status==='active'?'Suspendre':'Réactiver'}</button>
+              <button class="icon-btn danger" data-delete-member="${m.id}">Supprimer</button>
+            </td>
+          </tr>`).join('') : `<tr><td colspan="7"><div class="empty"><div class="ic">◇</div>Aucun abonné trouvé.</div></td></tr>`}
+        </tbody>
+      </table>
+    </div></div>
+  </div>`;
+}
+
+function adminSettings(){
+  const s = cache.adminStats || { member_limit:500, total_members:0 };
+  return `
+  <div class="topbar"><div><h1>Paramètres</h1><div class="sub">Configuration de la plateforme</div></div></div>
+  <div class="content">
+    <div class="panel"><div class="panel-head"><h3>Limite d'inscription</h3></div><div class="panel-body">
+      <p class="small-muted" style="margin-top:0;">Nombre maximal d'abonnés autorisés sur la plateforme.</p>
+      <div class="field" style="max-width:220px;"><label>Limite actuelle</label><input type="number" id="limitInput" min="${s.total_members}" value="${s.member_limit}"></div>
+      <button class="btn btn-outline" id="saveLimitBtn">Enregistrer</button>
+    </div></div>
+  </div>`;
+}
+
+/* ---------------------------- Shell Membre ---------------------------- */
+function viewMemberShell(){
+  const tab = uiState.memberTab;
+  return `
+  <div class="shell">
+    <div class="sidebar">
+      <div class="brand"><span class="brand-mark">S</span> Solvo</div>
+      <div class="side-user"><b>${escapeHtml(session.name)}</b>${escapeHtml(session.email)}</div>
+      <div class="tab ${tab==='overview'?'active':''}" data-mtab="overview"><span class="ic">◆</span> Tableau de bord</div>
+      <div class="tab ${tab==='due'?'active':''}" data-mtab="due"><span class="ic">−</span> Ce que je dois</div>
+      <div class="tab ${tab==='owed'?'active':''}" data-mtab="owed"><span class="ic">+</span> Ce qu'on me doit</div>
+      <div class="tab ${tab==='reports'?'active':''}" data-mtab="reports"><span class="ic">▤</span> Rapports</div>
+      <div class="tab ${tab==='profile'?'active':''}" data-mtab="profile"><span class="ic">☺</span> Profil</div>
+      <div class="side-foot"><button class="btn btn-ghost full" id="logoutBtn">Déconnexion</button></div>
+    </div>
+    <div class="main">
+      ${tab==='overview' ? memberOverview() : tab==='due' ? memberDebtList('due') : tab==='owed' ? memberDebtList('owed') : tab==='reports' ? memberReports() : memberProfile()}
+    </div>
+  </div>
+  ${uiState.modal==='addDebt' ? debtModal() : ''}
+  ${uiState.modal==='payDebt' ? payModal() : ''}
+  `;
+}
+
+function memberOverview(){
+  const debts = debtsCache();
+  const due = debts.filter(d=>d.type==='due' && d.status!=='cancelled');
+  const owed = debts.filter(d=>d.type==='owed' && d.status!=='cancelled');
+  const totalDue = due.reduce((s,d)=>s+remainingAmount(d),0);
+  const totalOwed = owed.reduce((s,d)=>s+remainingAmount(d),0);
+  const late = debts.filter(d=>d.status==='late');
+  const upcoming = debts.filter(d=>{ if(d.status==='paid'||d.status==='cancelled') return false; if(!d.due_date) return false; const diff=(new Date(d.due_date)-new Date())/86400000; return diff>=0 && diff<=14; }).sort((a,b)=>new Date(a.due_date)-new Date(b.due_date));
+  return `
+  <div class="topbar">
+    <div><h1>Tableau de bord</h1><div class="sub">Bienvenue, ${escapeHtml(session.name)}</div></div>
+    <button class="btn btn-gold" id="openAddDebt">+ Nouvelle dette</button>
+  </div>
+  <div class="content">
+    <div class="cards">
+      <div class="kpi"><div class="lbl">Je dois (restant)</div><div class="num danger mono">${fmtMoney(totalDue, session.currency)}</div><div class="foot">${due.length} dette(s)</div></div>
+      <div class="kpi"><div class="lbl">On me doit (restant)</div><div class="num success mono">${fmtMoney(totalOwed, session.currency)}</div><div class="foot">${owed.length} créance(s)</div></div>
+      <div class="kpi"><div class="lbl">Solde net</div><div class="num mono ${(totalOwed-totalDue)>=0?'success':'danger'}">${fmtMoney(totalOwed-totalDue, session.currency)}</div><div class="foot">créances − dettes</div></div>
+      <div class="kpi"><div class="lbl">En retard</div><div class="num ${late.length?'danger':''}">${late.length}</div><div class="foot">à régulariser</div></div>
+    </div>
+    <div class="two-col">
+      <div class="panel"><div class="panel-head"><h3>Échéances à venir (14 jours)</h3></div><div class="panel-body" style="padding:0;">
+        <table><thead><tr><th>Tiers</th><th>Type</th><th>Montant restant</th><th>Échéance</th></tr></thead>
+        <tbody>${upcoming.length ? upcoming.map(d=>`<tr><td>${escapeHtml(d.party)}</td><td>${d.type==='due'?'Je dois':'On me doit'}</td><td class="amount">${fmtMoney(remainingAmount(d),d.currency)}</td><td>${fmtDate(d.due_date)}</td></tr>`).join('') : `<tr><td colspan="4"><div class="empty">Aucune échéance proche.</div></td></tr>`}</tbody></table>
+      </div></div>
+      <div class="panel"><div class="panel-head"><h3>Répartition</h3></div><div class="panel-body"><div class="chart-box"><canvas id="chartSplit"></canvas></div></div></div>
+    </div>
+  </div>`;
+}
+
+function memberDebtList(type){
+  const label = type==='due' ? 'Ce que je dois' : "Ce qu'on me doit";
+  const list = debtsCache().slice().sort((a,b)=>new Date(a.due_date||0)-new Date(b.due_date||0));
+  return `
+  <div class="topbar"><div><h1>${label}</h1><div class="sub">${cache.debts.total||0} entrée(s)</div></div>
+    <div style="display:flex;gap:10px;"><button class="btn btn-outline btn-sm" id="exportCsv">Exporter CSV</button><button class="btn btn-gold" id="openAddDebt">+ Ajouter</button></div>
+  </div>
+  <div class="content">
+    <div class="toolbar">
+      <select id="debtStatusFilter">
+        <option value="all" ${uiState.filterStatus==='all'?'selected':''}>Tous statuts</option>
+        <option value="pending" ${uiState.filterStatus==='pending'?'selected':''}>En attente</option>
+        <option value="partial" ${uiState.filterStatus==='partial'?'selected':''}>Partiel</option>
+        <option value="paid" ${uiState.filterStatus==='paid'?'selected':''}>Payée</option>
+        <option value="late" ${uiState.filterStatus==='late'?'selected':''}>En retard</option>
+        <option value="cancelled" ${uiState.filterStatus==='cancelled'?'selected':''}>Annulée</option>
+      </select>
+    </div>
+    <div class="panel"><div class="panel-body" style="padding:0;">
+      <table>
+        <thead><tr><th>Tiers</th><th>Montant</th><th>Payé</th><th>Restant</th><th>Échéance</th><th>Statut</th><th></th></tr></thead>
+        <tbody>
+        ${list.length ? list.map(d=>`
+          <tr>
+            <td>${escapeHtml(d.party)}${d.notes?`<div class="small-muted">${escapeHtml(d.notes)}</div>`:''}</td>
+            <td class="amount">${fmtMoney(d.amount,d.currency)}</td>
+            <td class="amount">${fmtMoney(paidAmount(d),d.currency)}</td>
+            <td class="amount">${fmtMoney(remainingAmount(d),d.currency)}</td>
+            <td>${fmtDate(d.due_date)}</td>
+            <td><span class="badge ${d.status}">${statusLabel(d.status)}</span></td>
+            <td style="white-space:nowrap;text-align:right;">
+              ${d.status!=='paid' && d.status!=='cancelled' ? `<button class="icon-btn" data-pay="${d.id}">Paiement</button>` : ''}
+              ${d.status!=='cancelled' ? `<button class="icon-btn danger" data-cancel-debt="${d.id}">Annuler</button>` : ''}
+            </td>
+          </tr>`).join('') : `<tr><td colspan="7"><div class="empty"><div class="ic">◇</div>Aucune entrée pour le moment.</div></td></tr>`}
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+  ${uiState.modal==='addDebt' ? debtModal(type) : ''}
+  ${uiState.modal==='payDebt' ? payModal() : ''}`;
+}
+
+function memberReports(){
+  const debts = debtsCache();
+  return `
+  <div class="topbar"><div><h1>Rapports</h1><div class="sub">Analyse de votre registre personnel</div></div></div>
+  <div class="content">
+    <div class="two-col">
+      <div class="panel"><div class="panel-head"><h3>Répartition par statut</h3></div><div class="panel-body"><div class="chart-box"><canvas id="chartStatus"></canvas></div></div></div>
+      <div class="panel"><div class="panel-head"><h3>Répartition dettes / créances</h3></div><div class="panel-body"><div class="chart-box"><canvas id="chartSplit2"></canvas></div></div></div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>Résumé</h3></div><div class="panel-body">
+      <div class="ledger-row"><span class="lbl">Nombre total d'entrées</span><span class="val mono">${debts.length}</span></div>
+      <div class="ledger-row"><span class="lbl">Payées intégralement</span><span class="val mono">${debts.filter(d=>d.status==='paid').length}</span></div>
+      <div class="ledger-row"><span class="lbl">En retard</span><span class="val mono neg">${debts.filter(d=>d.status==='late').length}</span></div>
+      <div class="ledger-row"><span class="lbl">Annulées</span><span class="val mono">${debts.filter(d=>d.status==='cancelled').length}</span></div>
+    </div></div>
+  </div>`;
+}
+
+function memberProfile(){
+  return `
+  <div class="topbar"><div><h1>Profil</h1><div class="sub">Informations de votre compte</div></div></div>
+  <div class="content">
+    <div class="panel"><div class="panel-body">
+      <div id="profileMsg"></div>
+      <form id="profileForm">
+        <div class="row2">
+          <div class="field"><label>Nom complet</label><input type="text" name="name" value="${escapeHtml(session.name)}" required></div>
+          <div class="field"><label>Devise principale</label>
+            <select name="currency">${['XAF','EUR','USD','GBP','CAD'].map(c=>`<option ${session.currency===c?'selected':''}>${c}</option>`).join('')}</select>
+          </div>
+        </div>
+        <div class="field"><label>Adresse e-mail</label><input type="email" value="${escapeHtml(session.email)}" disabled></div>
+        <button class="btn btn-outline" type="submit">Mettre à jour</button>
+      </form>
+    </div></div>
+  </div>`;
+}
+
+/* ---------------------------- Modales ---------------------------- */
+function debtModal(defaultType){
+  return `
+  <div class="modal-bg" id="modalBg">
+    <div class="modal">
+      <div class="modal-head"><h3>Nouvelle entrée</h3><button class="modal-close" id="closeModal">×</button></div>
+      <div class="modal-body">
+        <div id="debtMsg"></div>
+        <form id="debtForm">
+          <div class="field"><label>Type</label>
+            <select name="type"><option value="due" ${defaultType==='due'?'selected':''}>Je dois (dette)</option><option value="owed" ${defaultType==='owed'?'selected':''}>On me doit (créance)</option></select>
+          </div>
+          <div class="field"><label>Nom du tiers</label><input type="text" name="party" required placeholder="Ex : Jean, Fournisseur XYZ…"></div>
+          <div class="row2">
+            <div class="field"><label>Montant</label><input type="number" name="amount" min="1" step="any" required></div>
+            <div class="field"><label>Devise</label><select name="currency">${['XAF','EUR','USD','GBP','CAD'].map(c=>`<option ${session.currency===c?'selected':''}>${c}</option>`).join('')}</select></div>
+          </div>
+          <div class="field"><label>Date d'échéance</label><input type="date" name="dueDate"></div>
+          <div class="field"><label>Notes (facultatif)</label><textarea name="notes" rows="2"></textarea></div>
+        </form>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost" id="cancelModal">Annuler</button><button class="btn btn-gold" id="submitDebt">Enregistrer</button></div>
+    </div>
+  </div>`;
+}
+function payModal(){
+  const d = debtsCache().find(x=>x.id===uiState.payingDebtId); if(!d) return '';
+  const rem = remainingAmount(d);
+  return `
+  <div class="modal-bg" id="modalBg">
+    <div class="modal">
+      <div class="modal-head"><h3>Enregistrer un paiement</h3><button class="modal-close" id="closeModal">×</button></div>
+      <div class="modal-body">
+        <div id="payMsg"></div>
+        <p class="small-muted" style="margin-top:0;">${escapeHtml(d.party)} — restant dû : <b class="mono">${fmtMoney(rem,d.currency)}</b> (devise fixée à ${d.currency}, non modifiable)</p>
+        <div class="progress-bar"><span style="width:${Math.min(100, (paidAmount(d)/(d.amount||1))*100)}%"></span></div>
+        <form id="payForm" style="margin-top:18px;">
+          <div class="field"><label>Montant du paiement (${d.currency})</label><input type="number" name="amount" min="1" max="${rem}" step="any" required></div>
+          <div class="field"><label>Date</label><input type="date" name="date" value="${new Date().toISOString().slice(0,10)}"></div>
+        </form>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost" id="cancelModal">Annuler</button><button class="btn btn-gold" id="submitPay">Confirmer</button></div>
+    </div>
+  </div>`;
+}
+
+/* ---------------------------- Graphiques ---------------------------- */
+let chartRefs = {};
+function destroyCharts(){ Object.values(chartRefs).forEach(c=>{ try{c.destroy();}catch(e){} }); chartRefs = {}; }
+function afterRenderCharts(){
+  destroyCharts();
+  if(typeof Chart === 'undefined') return;
+  const goldRgb='rgba(176,141,62,1)', successRgb='rgba(47,109,79,1)', dangerRgb='rgba(158,59,59,1)';
+  if(document.getElementById('chartMembers') && cache.adminStats){
+    const s = cache.adminStats;
+    chartRefs.m = new Chart(document.getElementById('chartMembers'), {type:'doughnut', data:{labels:['Actifs','Suspendus','Places restantes'], datasets:[{data:[s.active_members, s.suspended_members, s.remaining_slots], backgroundColor:[successRgb, dangerRgb, 'rgba(220,211,188,1)']}]}, options:{plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}}});
+  }
+  if(document.getElementById('chartSplit')){
+    const debts = debtsCache();
+    const due = debts.filter(d=>d.type==='due' && d.status!=='cancelled').reduce((s,d)=>s+remainingAmount(d),0);
+    const owed = debts.filter(d=>d.type==='owed' && d.status!=='cancelled').reduce((s,d)=>s+remainingAmount(d),0);
+    chartRefs.s = new Chart(document.getElementById('chartSplit'), {type:'doughnut', data:{labels:['Je dois','On me doit'], datasets:[{data:[due,owed], backgroundColor:[dangerRgb, successRgb]}]}, options:{plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}}});
+  }
+  if(document.getElementById('chartSplit2')){
+    const debts = debtsCache();
+    const due = debts.filter(d=>d.type==='due' && d.status!=='cancelled').reduce((s,d)=>s+remainingAmount(d),0);
+    const owed = debts.filter(d=>d.type==='owed' && d.status!=='cancelled').reduce((s,d)=>s+remainingAmount(d),0);
+    chartRefs.s2 = new Chart(document.getElementById('chartSplit2'), {type:'doughnut', data:{labels:['Je dois','On me doit'], datasets:[{data:[due,owed], backgroundColor:[dangerRgb, successRgb]}]}, options:{plugins:{legend:{position:'bottom', labels:{boxWidth:12}}}}});
+  }
+  if(document.getElementById('chartStatus')){
+    const debts = debtsCache();
+    const cats = ['pending','partial','late','paid','cancelled'];
+    const vals = cats.map(c=>debts.filter(d=>d.status===c).length);
+    chartRefs.st = new Chart(document.getElementById('chartStatus'), {type:'bar', data:{labels:cats.map(statusLabel), datasets:[{label:'Nombre', data:vals, backgroundColor:['rgba(185,138,46,.8)','rgba(58,90,140,.8)','rgba(158,59,59,.8)','rgba(47,109,79,.8)','rgba(140,140,140,.8)'], borderRadius:4}]}, options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}}}});
+  }
+}
+
+
+/* ---------------------------- Événements ---------------------------- */
+function bindEvents(){
+  document.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click', ()=>{ uiState.search=''; go(el.dataset.go); }));
+
+  const loginForm = document.getElementById('loginForm');
+  if(loginForm) loginForm.addEventListener('submit', async e=>{
+    e.preventDefault();
+    const fd = new FormData(loginForm);
+    const msg = document.getElementById('authMsg');
+    try{
+      const { user } = await api('/auth/login', {method:'POST', body:{ email: fd.get('email'), password: fd.get('password') }});
+      session = user;
+      await go(user.role==='admin' ? 'admin' : 'member', {adminTab:'overview', memberTab:'overview'});
+    }catch(err){
+      msg.innerHTML = `<div class="form-msg err">${escapeHtml(err.message)}</div>`;
+    }
+  });
+
+  const registerForm = document.getElementById('registerForm');
+  if(registerForm) registerForm.addEventListener('submit', async e=>{
+    e.preventDefault();
+    const fd = new FormData(registerForm);
+    const msg = document.getElementById('authMsg');
+    try{
+      await api('/auth/register', {method:'POST', body:{
+        name: fd.get('name'), email: fd.get('email'), password: fd.get('password'), currency: fd.get('currency')
+      }});
+      const { user } = await api('/auth/login', {method:'POST', body:{ email: fd.get('email'), password: fd.get('password') }});
+      session = user;
+      toast('Compte créé — bienvenue sur Solvo.');
+      await go('member', {memberTab:'overview'});
+    }catch(err){
+      msg.innerHTML = `<div class="form-msg err">${escapeHtml(err.message)}</div>`;
+    }
+  });
+
+  const logoutBtn = document.getElementById('logoutBtn'); if(logoutBtn) logoutBtn.addEventListener('click', logout);
+
+  document.querySelectorAll('[data-atab]').forEach(el=>el.addEventListener('click', ()=>{ uiState.search=''; go('admin',{adminTab:el.dataset.atab}); }));
+  document.querySelectorAll('[data-mtab]').forEach(el=>el.addEventListener('click', ()=>{ uiState.search=''; uiState.filterStatus='all'; go('member',{memberTab:el.dataset.mtab}); }));
+
+  const memberSearch = document.getElementById('memberSearch'); if(memberSearch) memberSearch.addEventListener('input', ()=>{ uiState.search = memberSearch.value; render(); const el=document.getElementById('memberSearch'); if(el){ el.focus(); el.selectionStart=el.selectionEnd=el.value.length; } });
+  const memberStatusFilter = document.getElementById('memberStatusFilter'); if(memberStatusFilter) memberStatusFilter.addEventListener('change', ()=>{ uiState.filterStatus = memberStatusFilter.value; go('admin', {adminTab:'members'}); });
+  const debtStatusFilter = document.getElementById('debtStatusFilter'); if(debtStatusFilter) debtStatusFilter.addEventListener('change', ()=>{ uiState.filterStatus = debtStatusFilter.value; go('member', {memberTab: uiState.memberTab}); });
+
+  document.querySelectorAll('[data-toggle-member]').forEach(el=>el.addEventListener('click', async ()=>{
+    const newStatus = el.dataset.currentStatus==='active' ? 'suspended' : 'active';
+    try{
+      await api(`/admin/users/${el.dataset.toggleMember}/status`, {method:'PATCH', body:{status:newStatus}});
+      await go('admin', {adminTab:'members'});
+    }catch(err){ toast(err.message); }
+  }));
+  document.querySelectorAll('[data-delete-member]').forEach(el=>el.addEventListener('click', async ()=>{
+    if(!confirm('Supprimer ce compte ? Ses dettes et paiements resteront conservés (suppression douce).')) return;
+    try{
+      await api(`/admin/users/${el.dataset.deleteMember}`, {method:'DELETE'});
+      toast('Compte supprimé (données historiques conservées).');
+      await go('admin', {adminTab:'members'});
+    }catch(err){ toast(err.message); }
+  }));
+
+  const saveLimitBtn = document.getElementById('saveLimitBtn'); if(saveLimitBtn) saveLimitBtn.addEventListener('click', async ()=>{
+    const v = parseInt(document.getElementById('limitInput').value,10);
+    try{
+      await api('/admin/settings', {method:'PUT', body:{ member_limit: v }});
+      toast('Limite mise à jour.');
+      await go('admin', {adminTab:'settings'});
+    }catch(err){ toast(err.message); }
+  });
+
+  const openAddDebt = document.getElementById('openAddDebt'); if(openAddDebt) openAddDebt.addEventListener('click', ()=>{ uiState.modal='addDebt'; render(); });
+  document.querySelectorAll('[data-pay]').forEach(el=>el.addEventListener('click', ()=>{ uiState.modal='payDebt'; uiState.payingDebtId = el.dataset.pay; render(); }));
+  document.querySelectorAll('[data-cancel-debt]').forEach(el=>el.addEventListener('click', async ()=>{
+    if(!confirm('Annuler définitivement cette entrée ? Elle restera visible comme "Annulée".')) return;
+    try{
+      await api(`/debts/${el.dataset.cancelDebt}`, {method:'DELETE'});
+      toast('Entrée annulée.');
+      await go('member', {memberTab: uiState.memberTab});
+    }catch(err){ toast(err.message); }
+  }));
+
+  const closeModal = document.getElementById('closeModal'); if(closeModal) closeModal.addEventListener('click', closeModalFn);
+  const cancelModal = document.getElementById('cancelModal'); if(cancelModal) cancelModal.addEventListener('click', closeModalFn);
+  const modalBg = document.getElementById('modalBg'); if(modalBg) modalBg.addEventListener('click', e=>{ if(e.target.id==='modalBg') closeModalFn(); });
+
+  const submitDebt = document.getElementById('submitDebt'); if(submitDebt) submitDebt.addEventListener('click', async ()=>{
+    const form = document.getElementById('debtForm'); const fd = new FormData(form);
+    const msg = document.getElementById('debtMsg');
+    try{
+      await api('/debts', {method:'POST', body:{
+        type: fd.get('type'), party: fd.get('party'), amount: parseFloat(fd.get('amount')),
+        currency: fd.get('currency'), dueDate: fd.get('dueDate') || null, notes: fd.get('notes'),
+      }});
+      closeModalFn(); toast('Entrée enregistrée.');
+      await go('member', {memberTab: uiState.memberTab});
+    }catch(err){ msg.innerHTML = `<div class="form-msg err">${escapeHtml(err.message)}</div>`; }
+  });
+
+  const submitPay = document.getElementById('submitPay'); if(submitPay) submitPay.addEventListener('click', async ()=>{
+    const form = document.getElementById('payForm'); const fd = new FormData(form);
+    const msg = document.getElementById('payMsg');
+    const debt = debtsCache().find(x=>x.id===uiState.payingDebtId);
+    try{
+      await api('/payments', {method:'POST', body:{
+        debt_id: uiState.payingDebtId, amount: parseFloat(fd.get('amount')), currency: debt.currency, payment_date: fd.get('date'),
+      }});
+      closeModalFn(); toast('Paiement enregistré.');
+      await go('member', {memberTab: uiState.memberTab});
+    }catch(err){ msg.innerHTML = `<div class="form-msg err">${escapeHtml(err.message)}</div>`; }
+  });
+
+  const exportCsv = document.getElementById('exportCsv'); if(exportCsv) exportCsv.addEventListener('click', ()=>{
+    const debts = debtsCache();
+    let csv = 'Type,Tiers,Montant,Devise,Paye,Restant,Echeance,Statut,Notes\n';
+    debts.forEach(d=>{ csv += [d.type==='due'?'Je dois':'On me doit', d.party, d.amount, d.currency, paidAmount(d), remainingAmount(d), d.due_date||'', statusLabel(d.status), (d.notes||'').replace(/,/g,';')].join(',') + '\n'; });
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'solvo-registre.csv'; a.click();
+  });
+
+  const profileForm = document.getElementById('profileForm'); if(profileForm) profileForm.addEventListener('submit', async e=>{
+    e.preventDefault(); const fd = new FormData(profileForm);
+    try{
+      const { user } = await api('/me', {method:'PUT', body:{ name: fd.get('name'), currency: fd.get('currency') }});
+      session = user;
+      document.getElementById('profileMsg').innerHTML = '<div class="form-msg ok">Profil mis à jour.</div>';
+    }catch(err){ document.getElementById('profileMsg').innerHTML = `<div class="form-msg err">${escapeHtml(err.message)}</div>`; }
+  });
+}
+function closeModalFn(){ uiState.modal=null; uiState.payingDebtId=null; render(); }
+
+/* ---------------------------- Démarrage ---------------------------- */
+(async function init(){
+  document.getElementById('app').innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0E2B26;color:#F3EEE1;font-family:IBM Plex Sans,sans-serif;">Chargement de Solvo…</div>';
+  try{ landingStats = await api('/public/stats').catch(()=>null); }catch(e){}
+  try{
+    const { user } = await api('/me');
+    session = user;
+    route = user.role==='admin' ? 'admin' : 'member';
+  }catch(e){
+    route = 'landing';
+  }
+  await loadDataForRoute();
+  render();
+})();
+
+</script>
+</body>
+</html>
