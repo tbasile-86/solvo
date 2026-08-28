@@ -57,8 +57,28 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(env.port, () => {
+app.listen(env.port, async () => {
   console.log(`Solvo API démarrée sur le port ${env.port} (${env.nodeEnv})`);
+  // Crée automatiquement le compte admin au premier démarrage si les
+  // variables ADMIN_* sont présentes et qu'aucun admin n'existe encore.
+  // Utile sur les hébergeurs (ex. plan gratuit Render) où le Shell/SSH
+  // n'est pas accessible pour lancer `npm run create-admin` manuellement.
+  try {
+    const { pool } = require('./db/pool');
+    const { hashPassword } = require('./services/auth.service');
+    const { rows } = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+    if (rows.length === 0 && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+      const passwordHash = await hashPassword(process.env.ADMIN_PASSWORD);
+      await pool.query(
+        `INSERT INTO users (name, email, password_hash, role, status)
+         VALUES ($1, $2, $3, 'admin', 'active')`,
+        [process.env.ADMIN_NAME || 'Administrateur', process.env.ADMIN_EMAIL.toLowerCase(), passwordHash]
+      );
+      console.log(`Compte administrateur créé automatiquement : ${process.env.ADMIN_EMAIL}`);
+    }
+  } catch (err) {
+    console.error('Création automatique du compte admin : échec (non bloquant) —', err.message);
+  }
 });
 
 module.exports = app;
